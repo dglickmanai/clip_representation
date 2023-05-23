@@ -33,7 +33,8 @@ from open_clip import tokenize
 class CsvDataset(Dataset):
     def __init__(self, input_filename, transforms, img_key, caption_key, hard_captions_key, sep="\t"):
         logging.debug(f'Loading csv data from {input_filename}.')
-        df = pd.read_csv(input_filename, sep=sep, converters={"neg_caption":ast.literal_eval, "neg_image":ast.literal_eval})
+        df = pd.read_csv(input_filename, sep=sep,
+                         converters={"neg_caption": ast.literal_eval, "neg_image": ast.literal_eval})
 
         self.images = df[img_key].tolist()
         self.captions = df[caption_key].tolist()
@@ -61,7 +62,6 @@ class CsvDataset(Dataset):
         new_hard = tokenize([str(chosen_caption)])[0]
 
         return images, new_images, texts, new_texts, hard_captions, new_hard
-
 
 
 class SharedEpoch:
@@ -266,12 +266,12 @@ class ResampledShards2(IterableDataset):
     """An iterable dataset yielding a list of urls."""
 
     def __init__(
-        self,
-        urls,
-        nshards=sys.maxsize,
-        worker_seed=None,
-        deterministic=False,
-        epoch=-1,
+            self,
+            urls,
+            nshards=sys.maxsize,
+            worker_seed=None,
+            deterministic=False,
+            epoch=-1,
     ):
         """Sample shards from the shard list with replacement.
 
@@ -407,6 +407,34 @@ def get_wds_dataset(args, preprocess_img, is_train, epoch=0, floor=False):
     return DataInfo(dataloader=dataloader, shared_epoch=shared_epoch)
 
 
+class FruitsDataset(Dataset):
+    def __init__(self, num_fruits, preprocess_fn):
+        self.num_fruits = num_fruits
+        self.preprocess_fn = preprocess_fn
+
+
+def get_order_fruits_dataset(args, preprocess_fn, is_train, epoch=0):
+    num_fruits = args.num_fruits
+    dataset = FruitsDataset(num_fruits, preprocess_fn)
+    num_samples = len(dataset)
+    sampler = DistributedSampler(dataset) if args.distributed and is_train else None
+    shuffle = is_train and sampler is None
+
+    dataloader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=shuffle,
+        num_workers=args.workers,
+        pin_memory=True,
+        sampler=sampler,
+        drop_last=is_train,
+    )
+    dataloader.num_samples = num_samples
+    dataloader.num_batches = len(dataloader)
+
+    return DataInfo(dataloader, sampler)
+
+
 def get_csv_dataset(args, preprocess_fn, is_train, epoch=0):
     input_filename = args.train_data if is_train else args.val_data
     assert input_filename
@@ -450,9 +478,11 @@ def get_dataset_fn(data_path, dataset_type):
         else:
             raise ValueError(
                 f"Tried to figure out dataset type, but failed for extention {ext}.")
+    elif dataset_type == "synthetic":
+        return get_order_fruits_dataset
     else:
         raise ValueError(f"Unsupported dataset type: {dataset_type}")
-    
+
 
 def get_data(args, preprocess_fns, epoch=0):
     preprocess_train, preprocess_val = preprocess_fns
