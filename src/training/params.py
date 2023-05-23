@@ -160,7 +160,7 @@ def parse_args():
     parser.add_argument(
         "--model",
         type=str,
-        default="RN50",
+        default="ViT-B-32",
         help="Name of the vision backbone to use.",
     )
     parser.add_argument(
