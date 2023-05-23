@@ -43,7 +43,7 @@ setup(
     # Note that this is a string of words separated by whitespace, not a list.
     keywords='CLIP pretrained',
     package_dir={'': 'src'},
-    packages=find_packages(where='src', exclude=['training']),
+    packages=find_packages(where='src'),
     include_package_data=True,
     install_requires=[
         'torch >= 1.9',
