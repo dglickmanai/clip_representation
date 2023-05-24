@@ -38,7 +38,7 @@ def parse_args():
     )
     parser.add_argument(
         "--dataset-type",
-        choices=["webdataset", "csv", "auto",'synthetic'],
+        choices=["webdataset", "csv", "auto", 'synthetic'],
         default="auto",
         help="Which type of dataset to process."
     )
@@ -288,7 +288,7 @@ def parse_args():
         "--norm_gradient_clip", type=float, default=None, help="Gradient clip."
     )
 
-    parser.add_argument('--num_fruits',type=int,default=0)
+    parser.add_argument('--num-objects', type=int, default=0)
     args = parser.parse_args()
 
     # If some params are not passed, we use the default values based on model name.
