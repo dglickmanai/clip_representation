@@ -289,6 +289,7 @@ def parse_args():
     )
 
     parser.add_argument('--num-objects', type=int, default=0)
+    parser.add_argument('--num-samples', type=int, default=1_000_000)
     args = parser.parse_args()
 
     # If some params are not passed, we use the default values based on model name.

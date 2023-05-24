@@ -412,7 +412,7 @@ def get_wds_dataset(args, preprocess_img, is_train, epoch=0, floor=False):
 
 def get_order_fruits_dataset(args, preprocess_fn, is_train, epoch=0):
     num_objects = args.num_objects
-    dataset = ObjectsDataset(num_objects, transform=preprocess_fn)
+    dataset = ObjectsDataset(num_objects, num_samples=args.num_samples, transform=preprocess_fn)
     num_samples = len(dataset)
     sampler = DistributedSampler(dataset) if args.distributed and is_train else None
     shuffle = is_train and sampler is None

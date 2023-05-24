@@ -42,7 +42,7 @@ def generate_random_objects_names(num_images, num_objects, object_options):
 
     object_names_list = [[random.choice(list(object_options.keys())) for _ in range(num_objects)] for _ in
                          range(num_images * 2)]
-    #make objects unique
+    # make objects unique
     object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)][:num_images]
     assert len(
         object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
@@ -51,8 +51,8 @@ def generate_random_objects_names(num_images, num_objects, object_options):
 
 
 class ObjectsDataset(Dataset):
-    def __init__(self, num_objects, object_options=fruit_options, patch_size=patch_size, transform=None):
-        num_images = 1_000_000
+    def __init__(self, num_objects, num_samples, object_options=fruit_options, patch_size=patch_size, transform=None):
+        num_images = num_samples
         data = generate_random_objects_names(num_images, num_objects, object_options)
         self.data = data
         self.object_options = object_options
