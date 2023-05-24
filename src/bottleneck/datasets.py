@@ -29,6 +29,7 @@ def place_objects_in_image(color_grid, patch_size=(16, 16)):
         img[y_start:y_start + patch_height, x_start:x_start + patch_width] = object
         # draw.rectangle([x_start, y_start, x_start + patch_width, y_start + patch_height], fill=color)
 
+    img = img / 255
     return img
 
 
