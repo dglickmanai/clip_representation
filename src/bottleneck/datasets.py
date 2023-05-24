@@ -41,32 +41,30 @@ def generate_random_objects_images(num_images, num_objects, object_options, patc
     assert len(
         object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
 
-    objects_list = [[object_options[obj] for obj in object_names] for object_names in object_names_list]
-    images = [place_objects_in_image(objects_names, patch_size=patch_size) for objects_names in objects_list]
-    return list(zip(images, object_names_list))
+    return object_names_list
 
 
-class ColorGridDataset(Dataset):
-    def __init__(self, data, transform=None):
-        """
-        Initialize the ColorGridDataset.
-
-        :param data: List of (image, color_names_grid) tuples
-        :param transform: Optional torchvision transforms to be applied to the images
-        """
+class ObjectsDataset(Dataset):
+    def __init__(self, data, object_options, patch_size, transform=None):
         self.data = data
+        self.object_options = object_options
+        self.patch_size = patch_size
         self.transform = transform
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        image, color_names_grid = self.data[idx]
+        object_names = self.data[idx]
+
+        objects_images = [self.object_options[obj] for obj in object_names]
+        image = place_objects_in_image(objects_images, patch_size=self.patch_size)
 
         if self.transform:
             image = self.transform(image)
 
-        return image, color_names_grid
+        text = ' '.join(object_names)
+        return image, text
 
 
 fruits = ['apple', 'banana', 'grapes', 'kiwi']
@@ -76,12 +74,12 @@ fruit_options = {fruit: Image.open(f'images/{fruit}.jpeg').resize(patch_size, Im
 fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
 
 num_objects = 6
-num_images = 1000
+num_images = 1_000
 data = generate_random_objects_images(num_images, num_objects, fruit_options, patch_size)
 
 # Create the ColorGridDataset
 transform = ToTensor()
-dataset = ColorGridDataset(data, transform=transform)
+dataset = ObjectsDataset(data, fruit_options, patch_size, transform=transform)
 
 # Example usage
 for i in range(len(dataset)):
