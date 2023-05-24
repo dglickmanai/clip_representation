@@ -1,64 +1,48 @@
 from PIL import Image, ImageDraw
 import random
 
-def generate_color_grid_image(color_grid, patch_size=(20, 20)):
-    """
-    Generate an image with colors arranged in a grid according to the input nested list.
+import torch
+from PIL import Image
+from torch.utils.data import Dataset
+from torchvision.transforms import ToTensor
+import numpy
 
-    :param color_grid: List of lists of colors in RGB tuples
-                       (e.g., [[(255, 0, 0), (0, 255, 0)], [(0, 0, 255), (255, 255, 0)]])
-    :param patch_size: Tuple representing the size of each color patch (width, height)
-    :return: An Image object with the colors arranged in a grid
-    """
+image_size = 224
+max_objects_in_row = 4
 
+
+def place_objects_in_image(color_grid, patch_size=(16, 16)):
     patch_width, patch_height = patch_size
-    grid_rows = len(color_grid)
-    grid_cols = len(color_grid[0])
 
-    img_width = grid_cols * patch_width
-    img_height = grid_rows * patch_height
-    img = Image.new("RGB", (img_width, img_height))
-    draw = ImageDraw.Draw(img)
+    img = numpy.full((image_size, image_size, 3), 255)
 
-    for i, row in enumerate(color_grid):
-        for j, color in enumerate(row):
-            x_start = j * patch_width
-            y_start = i * patch_height
-            draw.rectangle([x_start, y_start, x_start + patch_width, y_start + patch_height], fill=color)
+    for i, object in enumerate(color_grid):
+        # x_start = j * patch_width
+        # y_start = i * patch_height
+        x_start = (i % max_objects_in_row) * patch_width
+        y_start = (i // max_objects_in_row) * patch_width
+        img[y_start:y_start + patch_height, x_start:x_start + patch_width] = object
+        # draw.rectangle([x_start, y_start, x_start + patch_width, y_start + patch_height], fill=color)
 
     return img
 
 
-def generate_random_color_grid_image(grid_size, color_options, patch_size=(20, 20)):
+def generate_random_objects_image(num_objects, object_options, patch_size=(16, 16)):
     """
-    Generate an image with randomly arranged colors in a grid and return the color names.
+    Generate an image with randomly arranged objects in a grid and return the color names.
 
-    :param grid_size: Tuple representing the size of the grid (rows, cols)
-    :param color_options: Dictionary of color names and their RGB tuples
-                          (e.g., {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255)})
-    :param patch_size: Tuple representing the size of each color patch (width, height)
-    :return: An Image object with randomly arranged colors in a grid, and a list of lists with the color names
+    :param object_options: Dictionary of objects names and their image
+    :return: An Image object with randomly arranged objects and a list of lists with the color names
     """
 
-    def create_random_color_grid(grid_size, color_options):
-        grid_rows, grid_cols = grid_size
-        color_names_grid = [[random.choice(list(color_options.keys())) for _ in range(grid_cols)] for _ in
-                            range(grid_rows)]
-        color_grid = [[color_options[color_name] for color_name in row] for row in color_names_grid]
-        return color_grid, color_names_grid
+    def create_random_objects(num_objects, color_options):
+        object_names = [random.choice(list(color_options.keys())) for _ in range(num_objects)]
+        objects = [color_options[object] for object in object_names]
+        return objects, object_names
 
-    color_grid, color_names_grid = create_random_color_grid(grid_size, color_options)
-    image = generate_color_grid_image(color_grid, patch_size=patch_size)
-    return image, color_names_grid
-
-
-color_options = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'yellow': (255, 255, 0),
-                 'sky': (0, 255, 255), 'purple': (255, 0, 255)}
-grid_size = (3, 3)
-
-import torch
-from PIL import Image
-from torch.utils.data import Dataset
+    objects, object_names = create_random_objects(num_objects, object_options)
+    image = place_objects_in_image(objects, patch_size=patch_size)
+    return image, object_names
 
 
 class ColorGridDataset(Dataset):
@@ -84,9 +68,14 @@ class ColorGridDataset(Dataset):
         return image, color_names_grid
 
 
-from torchvision.transforms import ToTensor
+fruits = ['apple', 'banana', 'grapes', 'kiwi']
 
-data = [generate_random_color_grid_image(grid_size, color_options) for _ in range(10)]
+patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
+fruit_options = {fruit: Image.open(f'images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in fruits}
+fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
+
+num_objects = 6
+data = [generate_random_objects_image(num_objects, fruit_options, patch_size) for _ in range(10)]
 
 data[0][0].show()
 
