@@ -22,6 +22,8 @@ from torch.utils.data.distributed import DistributedSampler
 from webdataset.filters import _shuffle
 from webdataset.tariterators import base_plus_ext, url_opener, tar_file_expander, valid_sample
 
+from bottleneck.datasets import ObjectsDataset
+
 try:
     import horovod.torch as hvd
 except ImportError:
@@ -408,15 +410,9 @@ def get_wds_dataset(args, preprocess_img, is_train, epoch=0, floor=False):
     return DataInfo(dataloader=dataloader, shared_epoch=shared_epoch)
 
 
-class FruitsDataset(Dataset):
-    def __init__(self, num_fruits, preprocess_fn):
-        self.num_fruits = num_fruits
-        self.preprocess_fn = preprocess_fn
-
-
 def get_order_fruits_dataset(args, preprocess_fn, is_train, epoch=0):
-    num_fruits = args.num_fruits
-    dataset = FruitsDataset(num_fruits, preprocess_fn)
+    num_objects = args.num_objects
+    dataset = ObjectsDataset(num_objects, transform=preprocess_fn)
     num_samples = len(dataset)
     sampler = DistributedSampler(dataset) if args.distributed and is_train else None
     shuffle = is_train and sampler is None

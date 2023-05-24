@@ -3,12 +3,17 @@ import random
 
 import torch
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import ToTensor
 import numpy
 
 image_size = 224
 max_objects_in_row = 4
+fruits = ['apple', 'banana', 'grapes', 'kiwi']
+patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
+fruit_options = {fruit: Image.open(f'resources/images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in
+                 fruits}
+fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
 
 
 def place_objects_in_image(color_grid, patch_size=(16, 16)):
@@ -27,7 +32,7 @@ def place_objects_in_image(color_grid, patch_size=(16, 16)):
     return img
 
 
-def generate_random_objects_names(num_images, num_objects, object_options, patch_size=(16, 16)):
+def generate_random_objects_names(num_images, num_objects, object_options):
     """
     Generate an image with randomly arranged objects in a grid and return the color names.
 
@@ -36,7 +41,8 @@ def generate_random_objects_names(num_images, num_objects, object_options, patch
     """
 
     object_names_list = [[random.choice(list(object_options.keys())) for _ in range(num_objects)] for _ in
-                         range(int(num_images * 1.5))]
+                         range(num_images * 2)]
+    #make objects unique
     object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)][:num_images]
     assert len(
         object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
@@ -45,7 +51,9 @@ def generate_random_objects_names(num_images, num_objects, object_options, patch
 
 
 class ObjectsDataset(Dataset):
-    def __init__(self, data, object_options, patch_size, transform=None):
+    def __init__(self, num_objects, object_options=fruit_options, patch_size=patch_size, transform=None):
+        num_images = 1_000_000
+        data = generate_random_objects_names(num_images, num_objects, object_options)
         self.data = data
         self.object_options = object_options
         self.patch_size = patch_size
@@ -66,20 +74,17 @@ class ObjectsDataset(Dataset):
         text = ' '.join(object_names)
         return image, text
 
-
-fruits = ['apple', 'banana', 'grapes', 'kiwi']
-
-patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
-fruit_options = {fruit: Image.open(f'images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in fruits}
-fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
-
-num_objects = 6
-num_images = 1_000
-
-# Create the ColorGridDataset
-data = generate_random_objects_names(num_images, num_objects, fruit_options, patch_size)
-transform = ToTensor()
-dataset = ObjectsDataset(data, fruit_options, patch_size, transform=transform)
-for i in range(len(dataset)):
-    image, color_names_grid = dataset[i]
-    print(f"Image shape: {image.shape}, Color names grid: {color_names_grid}")
+#
+# num_images = 1_000
+#
+# transform = ToTensor()
+# num_objects = 11
+# dataset = ObjectsDataset(num_objects, fruit_options, patch_size, transform=transform)
+# loader = DataLoader(dataset, batch_size=2, shuffle=True)
+# l = []
+# for i in loader:
+#     l.extend(i.tolist())
+# print('a')
+# for i in range(len(dataset)):
+#     image, color_names_grid = dataset[i]
+#     print(f"Image shape: {image.shape}, Color names grid: {color_names_grid}")
