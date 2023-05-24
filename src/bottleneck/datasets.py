@@ -27,7 +27,7 @@ def place_objects_in_image(color_grid, patch_size=(16, 16)):
     return img
 
 
-def generate_random_objects_images(num_images, num_objects, object_options, patch_size=(16, 16)):
+def generate_random_objects_names(num_images, num_objects, object_options, patch_size=(16, 16)):
     """
     Generate an image with randomly arranged objects in a grid and return the color names.
 
@@ -75,13 +75,11 @@ fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
 
 num_objects = 6
 num_images = 1_000
-data = generate_random_objects_images(num_images, num_objects, fruit_options, patch_size)
 
 # Create the ColorGridDataset
+data = generate_random_objects_names(num_images, num_objects, fruit_options, patch_size)
 transform = ToTensor()
 dataset = ObjectsDataset(data, fruit_options, patch_size, transform=transform)
-
-# Example usage
 for i in range(len(dataset)):
     image, color_names_grid = dataset[i]
     print(f"Image shape: {image.shape}, Color names grid: {color_names_grid}")
