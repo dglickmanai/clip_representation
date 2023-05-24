@@ -27,7 +27,7 @@ def place_objects_in_image(color_grid, patch_size=(16, 16)):
     return img
 
 
-def generate_random_objects_image(num_objects, object_options, patch_size=(16, 16)):
+def generate_random_objects_images(num_images, num_objects, object_options, patch_size=(16, 16)):
     """
     Generate an image with randomly arranged objects in a grid and return the color names.
 
@@ -35,14 +35,15 @@ def generate_random_objects_image(num_objects, object_options, patch_size=(16, 1
     :return: An Image object with randomly arranged objects and a list of lists with the color names
     """
 
-    def create_random_objects(num_objects, color_options):
-        object_names = [random.choice(list(color_options.keys())) for _ in range(num_objects)]
-        objects = [color_options[object] for object in object_names]
-        return objects, object_names
+    object_names_list = [[random.choice(list(object_options.keys())) for _ in range(num_objects)] for _ in
+                         range(int(num_images * 1.5))]
+    object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)][:num_images]
+    assert len(
+        object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
 
-    objects, object_names = create_random_objects(num_objects, object_options)
-    image = place_objects_in_image(objects, patch_size=patch_size)
-    return image, object_names
+    objects_list = [[object_options[obj] for obj in object_names] for object_names in object_names_list]
+    images = [place_objects_in_image(objects_names, patch_size=patch_size) for objects_names in objects_list]
+    return list(zip(images, object_names_list))
 
 
 class ColorGridDataset(Dataset):
@@ -75,9 +76,8 @@ fruit_options = {fruit: Image.open(f'images/{fruit}.jpeg').resize(patch_size, Im
 fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
 
 num_objects = 6
-data = [generate_random_objects_image(num_objects, fruit_options, patch_size) for _ in range(10)]
-
-data[0][0].show()
+num_images = 1000
+data = generate_random_objects_images(num_images, num_objects, fruit_options, patch_size)
 
 # Create the ColorGridDataset
 transform = ToTensor()

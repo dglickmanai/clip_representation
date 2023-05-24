@@ -12,7 +12,7 @@ import ast
 import random
 import braceexpand
 import numpy as np
-import pandas as pd
+
 import torch
 import torchvision.datasets as datasets
 import webdataset as wds
@@ -33,6 +33,7 @@ from open_clip import tokenize
 class CsvDataset(Dataset):
     def __init__(self, input_filename, transforms, img_key, caption_key, hard_captions_key, sep="\t"):
         logging.debug(f'Loading csv data from {input_filename}.')
+        import pandas as pd
         df = pd.read_csv(input_filename, sep=sep,
                          converters={"neg_caption": ast.literal_eval, "neg_image": ast.literal_eval})
 
