@@ -288,7 +288,7 @@ def parse_args():
         "--norm_gradient_clip", type=float, default=None, help="Gradient clip."
     )
 
-    parser.add_argument('--num-objects', type=int, default=0)
+    parser.add_argument('--num-objects', type=int)
     parser.add_argument('--num-samples', type=int, default=1_000_000)
     args = parser.parse_args()
 
