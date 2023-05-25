@@ -29,7 +29,7 @@ from training.distributed import is_master, init_distributed_device, world_info_
 from training.logger import setup_logging
 from training.params import parse_args
 from training.scheduler import cosine_lr
-from training.train import train_one_epoch, evaluate
+from training.train import train_one_epoch, train_one_epoch_new, evaluate
 
 
 def random_seed(seed=42, rank=0):
@@ -156,6 +156,8 @@ def main():
             ddp_args['static_graph'] = True
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
 
+    if device.type == 'cpu':
+        model = model.double()
     # create optimizer and scaler
     optimizer = None
     scaler = None
@@ -251,8 +253,10 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
-
-        train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+        if args.dataset_type == 'synthetic':
+            train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+        else:
+            train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
         completed_epoch = epoch + 1
 
         if any(v in data for v in ('val', 'imagenet-val', 'imagenet-v2')):
@@ -270,7 +274,7 @@ def main():
                 checkpoint_dict["scaler"] = scaler.state_dict()
 
             if completed_epoch == args.epochs or (
-                args.save_frequency > 0 and (completed_epoch % args.save_frequency) == 0
+                    args.save_frequency > 0 and (completed_epoch % args.save_frequency) == 0
             ):
                 torch.save(
                     checkpoint_dict,
