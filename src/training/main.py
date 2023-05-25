@@ -8,6 +8,8 @@ import torch
 from torch import optim
 from torch.cuda.amp import GradScaler
 
+from bottleneck.utils import get_device
+
 try:
     import wandb
 except ImportError:
@@ -78,7 +80,9 @@ def main():
     # fully initialize distributed device environment
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False
-    device = init_distributed_device(args)
+    # device = init_distributed_device(args)
+    device = get_device()
+    args.device = device
 
     args.wandb = 'wandb' in args.report_to or 'all' in args.report_to
     args.tensorboard = 'tensorboard' in args.report_to or 'all' in args.report_to
