@@ -160,7 +160,7 @@ def main():
             ddp_args['static_graph'] = True
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
 
-    model = model.double()
+    # model = model.double()
     # create optimizer and scaler
     optimizer = None
     scaler = None

@@ -36,24 +36,6 @@ def place_objects_in_image(color_grid, patch_size=(16, 16)):
     return img
 
 
-def generate_random_objects_names(num_images, num_objects, object_options):
-    """
-    Generate an image with randomly arranged objects in a grid and return the color names.
-
-    :param object_options: Dictionary of objects names and their image
-    :return: An Image object with randomly arranged objects and a list of lists with the color names
-    """
-
-    object_names_list = [[random.choice(list(object_options.keys())) for _ in range(num_objects)] for _ in
-                         range(num_images * 2)]
-    # make objects unique
-    object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)][:num_images]
-    assert len(
-        object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
-
-    return object_names_list
-
-
 def random_insert_unique(source, target):
     unique_indexes = random.sample(range(len(target)), len(source))
     for index, item in zip(unique_indexes, source):
@@ -67,7 +49,7 @@ class ObjectsDataset(Dataset):
                  ):
         self.with_spaces = with_spaces
         num_images = num_samples
-        data = generate_random_objects_names(num_images, num_objects, object_options)
+        data = self.generate_random_objects_names(num_images, num_objects, object_options)
         self.data = data
         self.object_options = object_options
         self.patch_size = patch_size
@@ -87,11 +69,29 @@ class ObjectsDataset(Dataset):
         image = place_objects_in_image(objects_images, patch_size=self.patch_size)
 
         if self.transform:
-            image = self.transform(image)
+            image = self.transform(image).float()
 
         text = ' '.join(object_names)
         text = tokenize([text])[0]
         return image, text
+
+    def generate_random_objects_names(self, num_images, num_objects, object_options):
+        """
+        Generate an image with randomly arranged objects in a grid and return the color names.
+
+        :param object_options: Dictionary of objects names and their image
+        :return: An Image object with randomly arranged objects and a list of lists with the color names
+        """
+
+        object_names_list = [[random.choice(list(object_options.keys())) for _ in range(num_objects)] for _ in
+                             range(num_images * 2)]
+        if not self.with_spaces:
+            # make objects unique
+            object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)][:num_images]
+            assert len(
+                object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
+
+        return object_names_list
 
 #
 # num_images = 1_000
