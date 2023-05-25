@@ -52,8 +52,9 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
     autocast = torch.cuda.amp.autocast if args.precision == 'amp' else suppress
 
     model.train()
+    top_k = 5
     loss = ClipLossWithRankingEvaluation(
-        recall_at=5,
+        recall_at=top_k,
         local_loss=args.local_loss,
         gather_with_grad=args.gather_with_grad,
         cache_labels=True,
@@ -69,6 +70,8 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
     loss_m = AverageMeter()
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
+    top_1_m = AverageMeter()
+    top_k_m = AverageMeter()
     end = time.time()
     for i, batch in enumerate(dataloader):
         step = num_batches_per_epoch * epoch + i
@@ -124,9 +127,13 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             # NOTE loss is coarsely sampled, just master node and per log update
             loss_m.update(total_loss.item(), batch_size)
             logit_scale_scalar = logit_scale.item()
+            top_1_m.update(recall_at_one.item(), batch_size)
+            top_k_m.update(recall_at_k.item(), batch_size)
             logging.info(
                 f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
-                f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) "
+                f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) ",
+                f"Top-1: {top_1_m.val:.3f} ({top_1_m.avg:.3f}) ",
+                f"Top-{top_k}: {top_k_m.val:.3f} ({top_k_m.avg:.3f}) ",
                 f"Data (t): {data_time_m.avg:.3f} "
                 f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size * args.world_size / batch_time_m.val:#g}/s "
                 f"LR: {optimizer.param_groups[0]['lr']:5f} "
