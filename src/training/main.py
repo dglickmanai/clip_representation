@@ -23,8 +23,8 @@ try:
 except ImportError:
     hvd = None
 
-from open_clip import create_model_and_transforms, trace_model
 from training.data import get_data
+from open_clip import create_model_and_transforms, trace_model
 from training.distributed import is_master, init_distributed_device, world_info_from_env
 from training.logger import setup_logging
 from training.params import parse_args
@@ -156,8 +156,7 @@ def main():
             ddp_args['static_graph'] = True
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
 
-    if device.type == 'cpu':
-        model = model.double()
+    model = model.double()
     # create optimizer and scaler
     optimizer = None
     scaler = None
