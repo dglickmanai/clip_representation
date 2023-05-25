@@ -6,4 +6,4 @@ tqdm
 webdataset>=0.2.5
 pandas
 braceexpand
-
+wandb
