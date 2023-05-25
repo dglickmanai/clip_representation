@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import tqdm
 
 from open_clip.loss import ClipLossWithRankingEvaluation
+from .stopping_criterion import StoppingCriterion
 
 try:
     import wandb
@@ -54,6 +55,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
 
     model.train()
     top_k = 5
+    stop_crit = StoppingCriterion(10, higher_is_better=True)
     loss = ClipLossWithRankingEvaluation(
         recall_at=top_k,
         local_loss=args.local_loss,
@@ -163,7 +165,10 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             # resetting batch / data time meters per log window
             batch_time_m.reset()
             data_time_m.reset()
-    # end for
+            stop = stop_crit(top_1_m.avg)
+            if stop:
+                return
+                # end for
 
 
 def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_writer=None):
