@@ -152,7 +152,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
                 "scale": logit_scale_scalar,
                 "lr": optimizer.param_groups[0]["lr"],
                 "top_1": top_1_m.val,
-                "top_k": top_k_m.val,
+                f"top_{top_k}": top_k_m.val,
             }
             for name, val in log_data.items():
                 name = "train/" + name
