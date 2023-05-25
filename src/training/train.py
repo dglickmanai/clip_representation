@@ -167,7 +167,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             batch_time_m.reset()
             data_time_m.reset()
             stop = stop_crit(top_1_m.val)
-            if stop:
+            if i > 50 and stop:
                 print(f'Early stopping at batch {i}')
                 return
                 # end for
