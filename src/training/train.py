@@ -8,6 +8,7 @@ from contextlib import suppress
 import numpy as np
 import torch
 import torch.nn.functional as F
+import tqdm
 
 from open_clip.loss import ClipLossWithRankingEvaluation
 
@@ -73,7 +74,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
     top_1_m = AverageMeter()
     top_k_m = AverageMeter()
     end = time.time()
-    for i, batch in enumerate(dataloader):
+    for i, batch in tqdm.tqdm(enumerate(dataloader)):
         step = num_batches_per_epoch * epoch + i
         scheduler(step)
 
@@ -132,8 +133,8 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             logging.info(
                 f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
                 f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) ",
-                f"Top-1: {top_1_m.val:.3f} ({top_1_m.avg:.3f}) ",
-                f"Top-{top_k}: {top_k_m.val:.3f} ({top_k_m.avg:.3f}) ",
+                f"Top-1: {top_1_m.val:#.5g} ({top_1_m.avg:#.5g}) ",
+                f"Top-{top_k}: {top_k_m.val:#.5g} ({top_k_m.avg:#.5g}) ",
                 f"Data (t): {data_time_m.avg:.3f} "
                 f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size * args.world_size / batch_time_m.val:#g}/s "
                 f"LR: {optimizer.param_groups[0]['lr']:5f} "
@@ -147,7 +148,9 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
                 "batch_time": batch_time_m.val,
                 "samples_per_scond": args.batch_size * args.world_size / batch_time_m.val,
                 "scale": logit_scale_scalar,
-                "lr": optimizer.param_groups[0]["lr"]
+                "lr": optimizer.param_groups[0]["lr"],
+                "top_1": top_1_m.val,
+                "top_k": top_k_m.val,
             }
             for name, val in log_data.items():
                 name = "train/" + name
