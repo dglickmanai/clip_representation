@@ -166,7 +166,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             # resetting batch / data time meters per log window
             batch_time_m.reset()
             data_time_m.reset()
-            stop = stop_crit(top_1_m.avg)
+            stop = stop_crit(top_1_m.val)
             if stop:
                 print(f'Early stopping at batch {i}')
                 return
