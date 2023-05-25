@@ -260,14 +260,14 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
             # NOTE loss is coarsely sampled, just master node and per log update
             loss_m.update(total_loss.item(), batch_size)
             logit_scale_scalar = logit_scale.item()
-            logging.info(
-                f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
-                f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) "
-                f"Data (t): {data_time_m.avg:.3f} "
-                f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size * args.world_size / batch_time_m.val:#g}/s "
-                f"LR: {optimizer.param_groups[0]['lr']:5f} "
-                f"Logit Scale: {logit_scale_scalar:.3f} - V4"
-            )
+            # logging.info(
+            #     f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
+            #     f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) "
+            #     f"Data (t): {data_time_m.avg:.3f} "
+            #     f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size * args.world_size / batch_time_m.val:#g}/s "
+            #     f"LR: {optimizer.param_groups[0]['lr']:5f} "
+            #     f"Logit Scale: {logit_scale_scalar:.3f} - V4"
+            # )
 
             # Save train loss / etc. Using non avg meter values as loggers have their own smoothing
             log_data = {
