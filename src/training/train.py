@@ -9,6 +9,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from open_clip.loss import ClipLossWithRankingEvaluation
+
 try:
     import wandb
 except ImportError:
@@ -50,7 +52,8 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
     autocast = torch.cuda.amp.autocast if args.precision == 'amp' else suppress
 
     model.train()
-    loss = ClipLoss(
+    loss = ClipLossWithRankingEvaluation(
+        recall_at=5,
         local_loss=args.local_loss,
         gather_with_grad=args.gather_with_grad,
         cache_labels=True,
@@ -82,7 +85,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
 
         with autocast():
             image_features, text_features, logit_scale = model(images, texts)
-            total_loss = loss(image_features, text_features, logit_scale)
+            total_loss, recall_at_k, recall_at_one = loss(image_features, text_features, logit_scale)
 
         if scaler is not None:
             scaler.scale(total_loss).backward()
