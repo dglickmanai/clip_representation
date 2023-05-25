@@ -55,7 +55,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
 
     model.train()
     top_k = 5
-    stop_crit = StoppingCriterion(10, higher_is_better=True)
+    stop_crit = StoppingCriterion(20, higher_is_better=True)
     loss = ClipLossWithRankingEvaluation(
         recall_at=top_k,
         local_loss=args.local_loss,
