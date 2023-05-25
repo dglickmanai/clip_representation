@@ -6,6 +6,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import ToTensor
 import numpy
+from open_clip import tokenize
 
 image_size = 224
 max_objects_in_row = 4
@@ -73,6 +74,7 @@ class ObjectsDataset(Dataset):
             image = self.transform(image)
 
         text = ' '.join(object_names)
+        text = tokenize([text])[0]
         return image, text
 
 #
