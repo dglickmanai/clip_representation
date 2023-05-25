@@ -12,7 +12,7 @@ image_size = 224
 max_objects_in_row = 4
 fruits = ['apple', 'banana', 'grapes', 'kiwi']
 patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
-fruit_options = {fruit: Image.open(f'../resources/images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in
+fruit_options = {fruit: Image.open(f'resources/images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in
                  fruits}
 fruit_options = {fruit: numpy.array(fruit_options[fruit]) for fruit in fruits}
 
@@ -92,7 +92,6 @@ class ObjectsDataset(Dataset):
         text = ' '.join(object_names)
         text = tokenize([text])[0]
         return image, text
-
 
 #
 # num_images = 1_000
