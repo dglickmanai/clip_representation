@@ -133,16 +133,16 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             logit_scale_scalar = logit_scale.item()
             top_1_m.update(recall_at_one.item(), batch_size)
             top_k_m.update(recall_at_k.item(), batch_size)
-            logging.info(
-                f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
-                f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) ",
-                f"Top-1: {top_1_m.val:#.5g} ({top_1_m.avg:#.5g}) ",
-                f"Top-{top_k}: {top_k_m.val:#.5g} ({top_k_m.avg:#.5g}) ",
-                f"Data (t): {data_time_m.avg:.3f} "
-                f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size * args.world_size / batch_time_m.val:#g}/s "
-                f"LR: {optimizer.param_groups[0]['lr']:5f} "
-                f"Logit Scale: {logit_scale_scalar:.3f} - V4"
-            )
+            # logging.info(
+            #     f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
+            #     f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) ",
+            #     f"Top-1: {top_1_m.val:#.5g} ({top_1_m.avg:#.5g}) ",
+            #     f"Top-{top_k}: {top_k_m.val:#.5g} ({top_k_m.avg:#.5g}) ",
+            #     f"Data (t): {data_time_m.avg:.3f} "
+            #     f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size * args.world_size / batch_time_m.val:#g}/s "
+            #     f"LR: {optimizer.param_groups[0]['lr']:5f} "
+            #     f"Logit Scale: {logit_scale_scalar:.3f} - V4"
+            # )
 
             # Save train loss / etc. Using non avg meter values as loggers have their own smoothing
             log_data = {
