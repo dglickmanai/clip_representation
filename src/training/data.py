@@ -414,14 +414,16 @@ def get_order_fruits_dataset(args, preprocess_fn, is_train, epoch=0):
     num_objects = args.num_objects
     assert len(preprocess_fn.transforms) == 4
     preprocess_fn.transforms = preprocess_fn.transforms[-2:]
-    dataset = ObjectsDataset(num_objects, num_samples=args.num_samples, transform=preprocess_fn)
+    dataset = ObjectsDataset(num_objects, num_samples=args.num_samples, num_hard_negatives=args.num_hard_negatives,
+                             transform=preprocess_fn,
+                             with_spaces=args.with_spaces)
     num_samples = len(dataset)
     sampler = DistributedSampler(dataset) if args.distributed and is_train else None
     shuffle = is_train and sampler is None
 
     dataloader = DataLoader(
         dataset,
-        batch_size=args.batch_size,
+        batch_size=args.batch_size // args.num_hard_negatives,
         shuffle=shuffle,
         num_workers=args.workers,
         pin_memory=True,

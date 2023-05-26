@@ -90,6 +90,10 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
         optimizer.zero_grad()
 
         with autocast():
+            assert images.dim() == 5
+            assert texts.dim() == 3
+            images = images.view(-1, images.shape[2], images.shape[3], images.shape[4])
+            texts = texts.view(-1, texts.shape[2])
             image_features, text_features, logit_scale = model(images, texts)
             total_loss, recall_at_k, recall_at_one = loss(image_features, text_features, logit_scale)
 

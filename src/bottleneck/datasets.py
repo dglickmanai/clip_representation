@@ -9,8 +9,9 @@ import numpy
 from open_clip import tokenize
 
 image_size = 224
-max_objects_in_row = 4
+max_objects_in_row = 8
 fruits = ['apple', 'banana', 'grapes', 'kiwi']
+# fruits = ['apple', 'banana']
 patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
 fruit_options = {fruit: Image.open(f'resources/images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in
                  fruits}
@@ -36,20 +37,29 @@ def place_objects_in_image(color_grid, patch_size=(16, 16)):
     return img
 
 
-def random_insert_unique(source, target):
-    unique_indexes = random.sample(range(len(target)), len(source))
+def random_insert_unique(source, target, unique_indexes):
     for index, item in zip(unique_indexes, source):
         target[index] = item
     return target
 
 
+def permute_lists_together(list1, list2):
+    zipped_list = list(zip(list1, list2))
+    random.shuffle(zipped_list)
+    permuted_list1, permuted_list2 = zip(*zipped_list)
+    permuted_list1, permuted_list2 = list(permuted_list1), list(permuted_list2)
+
+    return permuted_list1, permuted_list2
+
+
 class ObjectsDataset(Dataset):
-    def __init__(self, num_objects, num_samples, object_options=fruit_options, patch_size=patch_size, transform=None,
-                 with_spaces=True
-                 ):
+    def __init__(self, num_objects, num_samples, num_hard_negatives, object_options=fruit_options,
+                 patch_size=patch_size, transform=None,
+                 with_spaces=True, ):
         self.with_spaces = with_spaces
-        num_images = num_samples
+        num_images = num_samples // num_hard_negatives
         data = self.generate_random_objects_names(num_images, num_objects, object_options)
+        self.num_hard_negatives = num_hard_negatives
         self.data = data
         self.object_options = object_options
         self.patch_size = patch_size
@@ -62,15 +72,23 @@ class ObjectsDataset(Dataset):
         object_names = self.data[idx]
 
         objects_images = [self.object_options[obj] for obj in object_names]
-        if self.with_spaces:
-            num_items = (image_size // self.patch_size[0]) ** 2
-            target = [None] * num_items
-            objects_images = random_insert_unique(objects_images, target)
-        image = place_objects_in_image(objects_images, patch_size=self.patch_size)
+        num_items = (image_size // self.patch_size[0]) ** 2
+        unique_indexes = random.sample(range(num_items), len(objects_images)) if self.with_spaces else None
 
+        samples = [self.create_text_img(num_items, object_names_permuted, objects_images_permuted, unique_indexes)
+                   for object_names_permuted, objects_images_permuted in
+                   [permute_lists_together(object_names, objects_images) for _ in range(self.num_hard_negatives)]]
+        images = [sample[0] for sample in samples]
+        texts = [sample[1] for sample in samples]
+        return torch.stack(images), torch.stack(texts)
+
+    def create_text_img(self, num_items, object_names, objects_images, unique_indexes):
+        if self.with_spaces:
+            target = [None] * num_items
+            objects_images = random_insert_unique(objects_images, target, unique_indexes)
+        image = place_objects_in_image(objects_images, patch_size=self.patch_size)
         if self.transform:
             image = self.transform(image).float()
-
         text = ' '.join(object_names)
         text = tokenize([text])[0]
         return image, text
@@ -97,9 +115,9 @@ class ObjectsDataset(Dataset):
 # num_images = 1_000
 #
 # transform = ToTensor()
-# num_objects = 11
-# dataset = ObjectsDataset(num_objects, 1000, fruit_options, patch_size, transform=transform)
-# loader = DataLoader(dataset, batch_size=2, shuffle=True)
+# num_objects = 4
+# dataset = ObjectsDataset(num_objects, 1000, 8, fruit_options, patch_size, transform=transform)
+# loader = DataLoader(dataset, batch_size=32, shuffle=True)
 # l = []
 # for i in loader:
 #     l.extend(i.tolist())
