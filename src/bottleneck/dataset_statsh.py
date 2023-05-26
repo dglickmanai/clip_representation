@@ -10,10 +10,7 @@ from open_clip import tokenize
 
 image_size = 224
 max_objects_in_row = 8
-fruits = ['apple', 'banana', 'grapes', 'kiwi', 'orange', 'peach', 'pear', 'pineapple', 'strawberry', 'watermelon',
-          'mango', 'lemon', 'lime', 'blueberry', 'raspberry', 'blackberry', 'cherry', 'avocado', 'coconut', 'fig',
-          'guava', 'papaya', 'plum', 'pomegranate', 'tomato', 'eggplant', 'carrot', 'broccoli',
-          'cucumber', 'corn', 'potato', 'onion', 'garlic', 'ginger', 'pepper', 'mushroom', 'peas', 'beans', ]
+fruits = ['apple', 'banana', 'grapes', 'kiwi', 'orange', 'peach', 'pear', 'pineapple', 'strawberry', 'watermelon']
 # fruits = ['apple', 'banana']
 patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
 fruit_options = {fruit: Image.open(f'resources/images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in
@@ -76,29 +73,34 @@ class ObjectsDataset(Dataset):
 
         objects_images = [self.object_options[obj] for obj in object_names]
         num_items = (image_size // self.patch_size[0]) ** 2
-        unique_indexes = random.sample(range(num_items), len(objects_images)) if self.with_spaces else None
 
-        samples = []
-        while len(samples) < self.num_hard_negatives:
-            object_names_permuted, objects_images_permuted = permute_lists_together(object_names, objects_images)
-            if object_names_permuted not in [t for t, i in samples]:
-                samples.append((object_names_permuted, objects_images_permuted))
-            else:
-                print('skipping duplicate')
+        # samples = []
+        # for i in range(self.num_hard_negatives):
+        #     object_names_permuted, objects_images_permuted = permute_lists_together(object_names, objects_images)
+        #     samples.append((object_names_permuted, objects_images_permuted))
+        #     # if object_names_permuted not in [t for t, i in samples]:
+        #     #     samples.append((object_names_permuted, objects_images_permuted))
+        #     # else:
+        #     #     print('skipping duplicate')
+        #
+        # for i, (object_names_permuted, objects_images_permuted) in enumerate(samples):
+        #     samples[i] = self.create_text_img(num_items, object_names_permuted, objects_images_permuted)
 
-        for i, (object_names_permuted, objects_images_permuted) in enumerate(samples):
-            samples[i] = self.create_text_img(num_items, object_names_permuted, objects_images_permuted, unique_indexes)
-        # samples = [self.create_text_img(num_items, object_names_permuted, objects_images_permuted, unique_indexes)
-        #            for object_names_permuted, objects_images_permuted in
-        #            [permute_lists_together(object_names, objects_images) for _ in range(self.num_hard_negatives)]]
+        samples = [self.create_text_img(num_items, object_names, objects_images) for _ in
+                   range(self.num_hard_negatives)]
+
         images = [sample[0] for sample in samples]
         texts = [sample[1] for sample in samples]
         return torch.stack(images), torch.stack(texts)
 
-    def create_text_img(self, num_items, object_names, objects_images, unique_indexes):
+    def create_text_img(self, num_items, object_names, objects_images):
         if self.with_spaces:
+            unique_indexes = random.sample(range(num_items), len(objects_images)) if self.with_spaces else None
             target = [None] * num_items
             objects_images = random_insert_unique(objects_images, target, unique_indexes)
+
+            target_names = ['x'] * num_items
+            object_names = random_insert_unique(object_names, target_names, unique_indexes)
         image = place_objects_in_image(objects_images, patch_size=self.patch_size)
         if self.transform:
             image = self.transform(image).float()
@@ -121,8 +123,8 @@ class ObjectsDataset(Dataset):
             object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)][:num_images]
             assert len(
                 object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
-        else:
-            object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list if len(set(x)) > 1)]
+        # else:
+        #     object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list)]
 
         return object_names_list
 

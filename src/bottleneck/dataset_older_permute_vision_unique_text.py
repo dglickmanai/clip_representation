@@ -10,10 +10,7 @@ from open_clip import tokenize
 
 image_size = 224
 max_objects_in_row = 8
-fruits = ['apple', 'banana', 'grapes', 'kiwi', 'orange', 'peach', 'pear', 'pineapple', 'strawberry', 'watermelon',
-          'mango', 'lemon', 'lime', 'blueberry', 'raspberry', 'blackberry', 'cherry', 'avocado', 'coconut', 'fig',
-          'guava', 'papaya', 'plum', 'pomegranate', 'tomato', 'eggplant', 'carrot', 'broccoli',
-          'cucumber', 'corn', 'potato', 'onion', 'garlic', 'ginger', 'pepper', 'mushroom', 'peas', 'beans', ]
+fruits = ['apple', 'banana', 'grapes', 'kiwi', 'orange', 'peach', 'pear', 'pineapple', 'strawberry', 'watermelon']
 # fruits = ['apple', 'banana']
 patch_size = (image_size // max_objects_in_row, image_size // max_objects_in_row)
 fruit_options = {fruit: Image.open(f'resources/images/{fruit}.jpeg').resize(patch_size, Image.BICUBIC) for fruit in
@@ -122,7 +119,7 @@ class ObjectsDataset(Dataset):
             assert len(
                 object_names_list) == num_images, f"Could not generate {num_images} unique images with {num_objects} objects"
         else:
-            object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list if len(set(x)) > 1)]
+            object_names_list = [list(x) for x in set(tuple(x) for x in object_names_list if len(set(x)) >= 2)]
 
         return object_names_list
 

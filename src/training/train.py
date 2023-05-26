@@ -55,7 +55,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
 
     model.train()
     top_k = 5
-    stop_crit = StoppingCriterion(20, higher_is_better=True)
+    stop_crit = StoppingCriterion(50, higher_is_better=True)
     loss = ClipLossWithRankingEvaluation(
         recall_at=top_k,
         local_loss=args.local_loss,
@@ -75,6 +75,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
     data_time_m = AverageMeter()
     top_1_m = AverageMeter()
     top_k_m = AverageMeter()
+    last_top_one = [0., 0., 0., 0., 0.]
     end = time.time()
     for i, batch in tqdm.tqdm(enumerate(dataloader)):
         step = num_batches_per_epoch * epoch + i
@@ -137,6 +138,8 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             logit_scale_scalar = logit_scale.item()
             top_1_m.update(recall_at_one.item(), batch_size)
             top_k_m.update(recall_at_k.item(), batch_size)
+            last_top_one.append(recall_at_one.item())
+            last_top_k_avg = sum(last_top_one[-3:]) / len(last_top_one[-3:])
             # logging.info(
             #     f"Train Epoch: {epoch} [{num_samples:>{sample_digits}}/{samples_per_epoch} ({percent_complete:.0f}%)] "
             #     f"Loss: {loss_m.val:#.5g} ({loss_m.avg:#.4g}) ",
@@ -158,6 +161,7 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
                 "lr": optimizer.param_groups[0]["lr"],
                 "top_1": top_1_m.val,
                 f"top_{top_k}": top_k_m.val,
+                'last_top_one_avg': last_top_k_avg,
             }
             for name, val in log_data.items():
                 name = "train/" + name
@@ -170,10 +174,10 @@ def train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, 
             # resetting batch / data time meters per log window
             batch_time_m.reset()
             data_time_m.reset()
-            stop = stop_crit(top_1_m.val)
+            stop = stop_crit(last_top_k_avg)
             if i > 50 and stop:
                 print(f'Early stopping at batch {i}')
-                return
+                return True
                 # end for
 
 

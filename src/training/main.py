@@ -75,7 +75,7 @@ def main():
 
     # Set logger
     args.log_level = logging.DEBUG if args.debug else logging.INFO
-    setup_logging(args.log_path, args.log_level)
+    # setup_logging(args.log_path, args.log_level)
 
     # fully initialize distributed device environment
     torch.backends.cudnn.benchmark = True
@@ -239,7 +239,7 @@ def main():
             args.val_sz = data["val"].dataloader.num_samples
         # you will have to configure this for your project!
         wandb.init(
-            project="fruits",
+            project="mega-fruits",
             notes=args.wandb_notes,
             tags=[],
             config=vars(args),
@@ -257,9 +257,9 @@ def main():
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
         if args.dataset_type == 'synthetic':
-            train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+            ans = train_one_epoch_new(model, data, epoch, optimizer, scaler, scheduler, args, writer)
         else:
-            train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+            ans = train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
         completed_epoch = epoch + 1
 
         if any(v in data for v in ('val', 'imagenet-val', 'imagenet-v2')):
@@ -288,6 +288,8 @@ def main():
                     checkpoint_dict,
                     os.path.join(args.checkpoint_path, f"epoch_latest.pt"),
                 )
+            if ans:
+                break
 
     if args.wandb and is_master(args):
         wandb.finish()

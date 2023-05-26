@@ -47,6 +47,7 @@ def get_device():
             best_gpu = max(gpus, key=lambda gpu_num: gpus[int(gpu_num)])
             return 'cuda:' + str(best_gpu)
         except:
+            'failed reading device'
             return 'cuda'
 
     gpus = get_index_of_free_gpus()
